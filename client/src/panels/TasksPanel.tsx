@@ -10,7 +10,7 @@ function formatDate(raw: string) {
   return new Date(iso).toLocaleString();
 }
 
-export default function TasksPage() {
+export default function TasksPanel() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [history, setHistory] = useState<Task[]>([]);
   const [showHistory, setShowHistory] = useState(false);
@@ -50,7 +50,7 @@ export default function TasksPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="label text-xs text-faint mb-4">To-dos</h1>
+        <h2 className="label text-xs text-faint mb-4">To-dos</h2>
         <form onSubmit={addTask} className="flex gap-2 mb-4">
           <input
             value={text}
@@ -87,14 +87,16 @@ export default function TasksPage() {
           <ul className="mt-3 divide-y divide-rule border border-rule">
             {history.length === 0 && <li className="px-3 py-4 text-sm text-faint">No completed tasks yet.</li>}
             {history.map((t) => (
-              <li key={t.id} className="flex items-center gap-3 px-3 py-2">
-                <span className="flex-1 text-sm text-muted line-through">{t.text}</span>
-                <span className="label text-[0.65rem] text-faint">
-                  {t.completedAt ? formatDate(t.completedAt) : ''}
-                </span>
-                <button onClick={() => toggle(t.id)} className="label text-xs text-faint hover:text-accent">
-                  Reopen
-                </button>
+              <li key={t.id} className="px-3 py-2">
+                <p className="text-sm text-muted line-through">{t.text}</p>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="label text-[0.65rem] text-faint">
+                    {t.completedAt ? formatDate(t.completedAt) : ''}
+                  </span>
+                  <button onClick={() => toggle(t.id)} className="label text-xs text-faint hover:text-accent">
+                    Reopen
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

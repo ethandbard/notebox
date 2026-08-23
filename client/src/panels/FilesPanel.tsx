@@ -43,7 +43,7 @@ function PreviewBody({ file }: { file: FileEntry }) {
   );
 }
 
-export default function FilesPage() {
+export default function FilesPanel() {
   const [files, setFiles] = useState<FileEntry[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -78,7 +78,7 @@ export default function FilesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="label text-xs text-faint">Files</h1>
+      <h2 className="label text-xs text-faint">Files</h2>
 
       <div
         onDragOver={(e) => {

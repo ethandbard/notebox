@@ -1,39 +1,25 @@
-import { NavLink, Route, Routes, Navigate } from 'react-router-dom';
-import TasksPage from './pages/Tasks.tsx';
-import NotesPage from './pages/Notes.tsx';
-import FilesPage from './pages/Files.tsx';
-
-const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-  `label text-xs px-1 pb-1 border-b ${
-    isActive ? 'text-accent border-accent' : 'text-faint border-transparent hover:text-ink'
-  }`;
+import TasksPanel from './panels/TasksPanel.tsx';
+import NotesPanel from './panels/NotesPanel.tsx';
+import FilesPanel from './panels/FilesPanel.tsx';
 
 export default function App() {
   return (
     <div className="min-h-screen">
       <header className="border-b border-rule">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 py-4">
           <span className="label text-sm text-ink">notebox</span>
-          <nav className="flex gap-6">
-            <NavLink to="/" end className={navLinkClass}>
-              Tasks
-            </NavLink>
-            <NavLink to="/notes" className={navLinkClass}>
-              Notes
-            </NavLink>
-            <NavLink to="/files" className={navLinkClass}>
-              Files
-            </NavLink>
-          </nav>
         </div>
       </header>
-      <main className="max-w-4xl mx-auto px-6 py-8">
-        <Routes>
-          <Route path="/" element={<TasksPage />} />
-          <Route path="/notes" element={<NotesPage />} />
-          <Route path="/files" element={<FilesPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+      <main className="max-w-6xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[20rem_1fr] gap-10 items-start">
+          <aside className="lg:sticky lg:top-8">
+            <TasksPanel />
+          </aside>
+          <div className="space-y-12">
+            <NotesPanel />
+            <FilesPanel />
+          </div>
+        </div>
       </main>
     </div>
   );

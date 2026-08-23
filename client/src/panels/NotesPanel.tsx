@@ -4,7 +4,7 @@ import remarkGfm from 'remark-gfm';
 import { api } from '../lib/api.ts';
 import type { Note, Section } from '../lib/types.ts';
 
-export default function NotesPage() {
+export default function NotesPanel() {
   const [sections, setSections] = useState<Section[]>([]);
   const [sectionName, setSectionName] = useState('');
   const [activeSectionId, setActiveSectionId] = useState<number | null>(null);
@@ -67,7 +67,9 @@ export default function NotesPage() {
   }
 
   return (
-    <div className="grid grid-cols-[14rem_1fr] gap-6">
+    <>
+      <h2 className="label text-xs text-faint mb-4">Notes</h2>
+      <div className="grid grid-cols-[14rem_1fr] gap-6">
       <aside className="space-y-4">
         <form onSubmit={addSection} className="flex gap-1">
           <input
@@ -179,6 +181,7 @@ export default function NotesPage() {
           </div>
         )}
       </section>
-    </div>
+      </div>
+    </>
   );
 }
