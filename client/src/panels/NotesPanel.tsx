@@ -4,7 +4,7 @@ import remarkGfm from 'remark-gfm';
 import { api } from '../lib/api.ts';
 import type { Note, Section } from '../lib/types.ts';
 
-export default function NotesPanel() {
+export default function NotesPanel({ onNotesChanged }: { onNotesChanged?: () => void }) {
   const [sections, setSections] = useState<Section[]>([]);
   const [sectionName, setSectionName] = useState('');
   const [activeSectionId, setActiveSectionId] = useState<number | null>(null);
@@ -39,6 +39,7 @@ export default function NotesPanel() {
     const section = await api.post<Section>('/api/sections', { name });
     setSections((s) => [...s, section]);
     setActiveSectionId(section.id);
+    onNotesChanged?.();
   }
 
   async function addNote() {
@@ -51,6 +52,7 @@ export default function NotesPanel() {
     setNotes((n) => [note, ...n]);
     setActiveNote(note);
     setMode('edit');
+    onNotesChanged?.();
   }
 
   async function saveActiveNote(patch: Partial<Pick<Note, 'title' | 'bodyMarkdown'>>) {
@@ -64,6 +66,7 @@ export default function NotesPanel() {
     await api.delete(`/api/notes/${id}`);
     setNotes((n) => n.filter((x) => x.id !== id));
     if (activeNote?.id === id) setActiveNote(null);
+    onNotesChanged?.();
   }
 
   return (
@@ -155,6 +158,12 @@ export default function NotesPanel() {
                   Preview
                 </button>
               </div>
+              <button
+                onClick={() => saveActiveNote({ title: activeNote.title, bodyMarkdown: activeNote.bodyMarkdown })}
+                className="label text-xs text-faint hover:text-accent"
+              >
+                Save
+              </button>
               <button
                 onClick={() => deleteNote(activeNote.id)}
                 className="label text-xs text-faint hover:text-accent"

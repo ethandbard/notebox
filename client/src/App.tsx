@@ -4,7 +4,8 @@ import NotesPanel from './panels/NotesPanel.tsx';
 import FilesPanel from './panels/FilesPanel.tsx';
 import Terminal from './Terminal.tsx';
 import { api } from './lib/api.ts';
-import type { Section, Task } from './lib/types.ts';
+import { formatSize } from './lib/format.ts';
+import type { FileEntry, Note, Section, Task } from './lib/types.ts';
 
 const GLYPH_CHARS = ['0', '1', '$', '#', '/', '{', '}', ':', '_', '=', '>', '<'];
 
@@ -27,6 +28,9 @@ export default function App() {
   const [glyphs, setGlyphs] = useState(() => Array.from({ length: 14 }, (_, i) => randomGlyph(i)));
   const [openCount, setOpenCount] = useState<number | null>(null);
   const [sectionCount, setSectionCount] = useState<number | null>(null);
+  const [noteCount, setNoteCount] = useState<number | null>(null);
+  const [fileCount, setFileCount] = useState<number | null>(null);
+  const [fileTotalBytes, setFileTotalBytes] = useState<number | null>(null);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -40,9 +44,24 @@ export default function App() {
     return () => document.removeEventListener('visibilitychange', onVisibility);
   }, []);
 
-  useEffect(() => {
-    api.get<Task[]>('/api/tasks').then((rows) => setOpenCount(rows.length));
+  const refreshOpenCount = () => api.get<Task[]>('/api/tasks').then((rows) => setOpenCount(rows.length));
+
+  const refreshNotesCount = () => {
     api.get<Section[]>('/api/sections').then((rows) => setSectionCount(rows.length));
+    api.get<Note[]>('/api/notes').then((rows) => setNoteCount(rows.length));
+  };
+
+  const refreshFilesCount = () => {
+    api.get<FileEntry[]>('/api/files').then((rows) => {
+      setFileCount(rows.length);
+      setFileTotalBytes(rows.reduce((sum, f) => sum + f.sizeBytes, 0));
+    });
+  };
+
+  useEffect(() => {
+    refreshOpenCount();
+    refreshNotesCount();
+    refreshFilesCount();
   }, []);
 
   useEffect(() => {
@@ -160,26 +179,34 @@ export default function App() {
           </div>
         </header>
 
-        <p className="flex items-center gap-1.5 font-mono text-[0.8rem] text-faint mt-4 mb-0">
-          <span className="nb-typed">
-            notebox:~$ tasks --pending {openCount ?? '…'}
-          </span>
-          <span className="nb-caret" />
-        </p>
+        <div className="flex flex-col gap-1 mt-4">
+          <p className="flex items-center gap-1.5 font-mono text-[0.8rem] text-faint mb-0">
+            <span className="nb-typed">
+              notebox:~$ tasks --pending {openCount ?? '…'}
+            </span>
+            <span className="nb-caret" />
+          </p>
+          <p className="font-mono text-[0.8rem] text-faint mb-0">
+            notebox:~$ notes --count {sectionCount ?? '…'} sections {noteCount ?? '…'} notes
+          </p>
+          <p className="font-mono text-[0.8rem] text-faint mb-0">
+            notebox:~$ files --count {fileCount ?? '…'} files {fileTotalBytes === null ? '…' : formatSize(fileTotalBytes)}
+          </p>
+        </div>
 
         <main className="grid grid-cols-1 gap-10 mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-[20rem_1fr] gap-10 items-start">
             <aside className="lg:sticky lg:top-6">
               <Terminal path="ethan@notebox:~/tasks$" delay={80}>
-                <TasksPanel />
+                <TasksPanel onTasksChanged={refreshOpenCount} />
               </Terminal>
             </aside>
             <div className="flex flex-col gap-12">
               <Terminal path="ethan@notebox:~/notes$" delay={170}>
-                <NotesPanel />
+                <NotesPanel onNotesChanged={refreshNotesCount} />
               </Terminal>
               <Terminal path="ethan@notebox:~/files$" delay={260}>
-                <FilesPanel />
+                <FilesPanel onFilesChanged={refreshFilesCount} />
               </Terminal>
             </div>
           </div>

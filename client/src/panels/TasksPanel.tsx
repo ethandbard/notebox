@@ -10,7 +10,7 @@ function formatDate(raw: string) {
   return new Date(iso).toLocaleString();
 }
 
-export default function TasksPanel() {
+export default function TasksPanel({ onTasksChanged }: { onTasksChanged?: () => void }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [history, setHistory] = useState<Task[]>([]);
   const [showHistory, setShowHistory] = useState(false);
@@ -36,6 +36,7 @@ export default function TasksPanel() {
     setText('');
     await api.post('/api/tasks', { text: value });
     loadActive();
+    onTasksChanged?.();
   }
 
   async function toggle(id: number) {
@@ -44,11 +45,13 @@ export default function TasksPanel() {
     await api.patch(`/api/tasks/${id}/toggle`);
     loadActive();
     if (showHistory) loadHistory();
+    onTasksChanged?.();
   }
 
   async function remove(id: number) {
     await api.delete(`/api/tasks/${id}`);
     loadActive();
+    onTasksChanged?.();
   }
 
   return (

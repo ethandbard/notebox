@@ -1,18 +1,32 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { api, uploadFile } from '../lib/api.ts';
+import { formatSize } from '../lib/format.ts';
 import type { FileEntry } from '../lib/types.ts';
-
-function formatSize(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 // See Tasks.tsx formatDate: only reshape SQLite's space-separated timestamp,
 // never a value that already carries a 'T' and zone.
 function formatDate(raw: string) {
   const iso = raw.includes('T') ? raw : `${raw.replace(' ', 'T')}Z`;
   return new Date(iso).toLocaleString();
+}
+
+function isPreviewable(mimeType: string) {
+  return (
+    mimeType.startsWith('image/') ||
+    mimeType.startsWith('video/') ||
+    mimeType.startsWith('audio/') ||
+    mimeType === 'application/pdf' ||
+    mimeType.startsWith('text/') ||
+    mimeType === 'application/json'
+  );
+}
+
+function filetypeLabel(originalName: string, mimeType: string) {
+  const ext = originalName.split('.').pop();
+  if (ext && ext !== originalName) return ext.toUpperCase();
+  const subtype = mimeType.split('/')[1] ?? mimeType;
+  return subtype.split('+')[0].split(';')[0].toUpperCase();
 }
 
 function PreviewBody({ file }: { file: FileEntry }) {
@@ -43,7 +57,7 @@ function PreviewBody({ file }: { file: FileEntry }) {
   );
 }
 
-export default function FilesPanel() {
+export default function FilesPanel({ onFilesChanged }: { onFilesChanged?: () => void }) {
   const [files, setFiles] = useState<FileEntry[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -64,6 +78,7 @@ export default function FilesPanel() {
         await uploadFile(file);
       }
       await load();
+      onFilesChanged?.();
     } finally {
       setUploading(false);
     }
@@ -74,6 +89,7 @@ export default function FilesPanel() {
     await api.delete(`/api/files/${id}`);
     if (previewFile?.id === id) setPreviewFile(null);
     load();
+    onFilesChanged?.();
   }
 
   return (
@@ -112,7 +128,7 @@ export default function FilesPanel() {
             <th className="text-left px-3 py-2">Name</th>
             <th className="text-left px-3 py-2">Size</th>
             <th className="text-left px-3 py-2">Uploaded</th>
-            <th className="text-left px-3 py-2">By</th>
+            <th className="text-left px-3 py-2">Filetype</th>
             <th />
           </tr>
         </thead>
@@ -136,7 +152,16 @@ export default function FilesPanel() {
               </td>
               <td className="px-3 py-2 text-muted">{formatSize(f.sizeBytes)}</td>
               <td className="px-3 py-2 text-muted">{formatDate(f.uploadedAt)}</td>
-              <td className="px-3 py-2 text-muted">{f.uploadedBy}</td>
+              <td className="px-3 py-2">
+                <span
+                  className={`label text-[0.65rem] ${
+                    isPreviewable(f.mimeType) ? 'text-accent' : 'text-faint'
+                  }`}
+                  title={isPreviewable(f.mimeType) ? 'Previewable' : 'No preview available'}
+                >
+                  {filetypeLabel(f.originalName, f.mimeType)}
+                </span>
+              </td>
               <td className="px-3 py-2 text-right">
                 <button onClick={() => remove(f.id)} className="text-faint hover:text-accent text-xs">
                   ✕
@@ -147,30 +172,32 @@ export default function FilesPanel() {
         </tbody>
       </table>
 
-      {previewFile && (
-        <div
-          onClick={() => setPreviewFile(null)}
-          className="fixed inset-0 z-10 bg-bg/80 flex items-center justify-center p-6"
-        >
+      {previewFile &&
+        createPortal(
           <div
-            onClick={(e) => e.stopPropagation()}
-            className="bg-bg border border-rule max-w-4xl w-full max-h-[90vh] overflow-auto p-4"
+            onClick={() => setPreviewFile(null)}
+            className="fixed inset-0 z-50 bg-bg/80 flex items-center justify-center p-6"
           >
-            <div className="flex items-center justify-between mb-3 gap-3">
-              <span className="text-sm truncate">{previewFile.originalName}</span>
-              <div className="flex items-center gap-4 label text-xs shrink-0">
-                <a href={`/api/files/${previewFile.id}/download`} className="text-faint hover:text-accent">
-                  Download
-                </a>
-                <button onClick={() => setPreviewFile(null)} className="text-faint hover:text-accent">
-                  Close ✕
-                </button>
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-bg border border-rule max-w-4xl w-full max-h-[90vh] overflow-auto p-4"
+            >
+              <div className="flex items-center justify-between mb-3 gap-3">
+                <span className="text-sm truncate">{previewFile.originalName}</span>
+                <div className="flex items-center gap-4 label text-xs shrink-0">
+                  <a href={`/api/files/${previewFile.id}/download`} className="text-faint hover:text-accent">
+                    Download
+                  </a>
+                  <button onClick={() => setPreviewFile(null)} className="text-faint hover:text-accent">
+                    Close ✕
+                  </button>
+                </div>
               </div>
+              <PreviewBody file={previewFile} />
             </div>
-            <PreviewBody file={previewFile} />
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
