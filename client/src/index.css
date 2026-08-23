@@ -19,19 +19,49 @@
   --accent: #5ce39b;
   --rule: #1e2b27;
   --spine: #2f4b41;
+  --hover: rgba(221, 230, 225, 0.045);
+  --accent-soft: rgba(92, 227, 155, 0.16);
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    --bg: #eef2ed;
-    --surface: #e4e9e2;
-    --ink: #101915;
-    --muted: #445048;
-    --faint: #6b7a70;
+    --bg: #f3f0e6;
+    --surface: #ebe5d5;
+    --ink: #26281f;
+    --muted: #565b49;
+    --faint: #7c8170;
     --accent: #1e7a4c;
-    --rule: #cbd5cc;
-    --spine: #9aa89d;
+    --rule: #ddd5bf;
+    --spine: #b7ae95;
+    --hover: rgba(38, 40, 31, 0.04);
+    --accent-soft: rgba(30, 122, 76, 0.14);
   }
+}
+
+:root[data-theme='dark'] {
+  --bg: #070a09;
+  --surface: #0b0f0e;
+  --ink: #dde6e1;
+  --muted: #8fa39b;
+  --faint: #5e736b;
+  --accent: #5ce39b;
+  --rule: #1e2b27;
+  --spine: #2f4b41;
+  --hover: rgba(221, 230, 225, 0.045);
+  --accent-soft: rgba(92, 227, 155, 0.16);
+}
+
+:root[data-theme='light'] {
+  --bg: #f3f0e6;
+  --surface: #ebe5d5;
+  --ink: #26281f;
+  --muted: #565b49;
+  --faint: #7c8170;
+  --accent: #1e7a4c;
+  --rule: #ddd5bf;
+  --spine: #b7ae95;
+  --hover: rgba(38, 40, 31, 0.04);
+  --accent-soft: rgba(30, 122, 76, 0.14);
 }
 
 @theme {
@@ -60,6 +90,217 @@ body {
   font-family: var(--font-mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+@keyframes nb-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+@keyframes nb-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--accent-soft); }
+  50% { box-shadow: 0 0 0 5px var(--accent-soft); }
+}
+@keyframes nb-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes nb-typing {
+  from { width: 0; }
+  to { width: 100%; }
+}
+@keyframes nb-scan {
+  0% { top: -140px; opacity: 0; }
+  3% { opacity: 1; }
+  24% { opacity: 1; }
+  27% { opacity: 0; }
+  100% { top: 100%; opacity: 0; }
+}
+@keyframes nb-glyph {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+@keyframes nb-cube-spin {
+  from { transform: rotateX(0deg) rotateY(0deg); }
+  to { transform: rotateX(360deg) rotateY(360deg); }
+}
+@keyframes nb-cube-burst {
+  0% { transform: rotateX(0deg) rotateY(0deg) scale(1); }
+  40% { transform: rotateX(160deg) rotateY(220deg) scale(1.2); }
+  100% { transform: rotateX(360deg) rotateY(540deg) scale(1); }
+}
+@keyframes nb-blip {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.9); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+.nb-grid-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(to bottom, var(--hover) 0 1px, transparent 1px 3px),
+    linear-gradient(to right, var(--color-rule) 0 1px, transparent 1px 64px),
+    linear-gradient(to bottom, var(--color-rule) 0 1px, transparent 1px 64px);
+  background-size: auto, 64px 64px, 64px 64px;
+  opacity: 0.55;
+}
+
+.nb-scan-beam {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: -140px;
+  height: 140px;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--accent-soft));
+  animation: nb-scan 2600ms linear both;
+}
+
+.nb-glyph-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.nb-glyph {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-spine);
+  animation-name: nb-glyph;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+.nb-brand-cursor {
+  display: inline-block;
+  width: 7px;
+  height: 12px;
+  margin-left: 4px;
+  vertical-align: -2px;
+  background: var(--color-accent);
+  animation: nb-blink 1.1s steps(1) infinite;
+}
+
+.nb-header-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--color-accent);
+  flex: none;
+  animation: nb-pulse 2.6s ease-in-out 1400ms infinite;
+}
+
+.nb-caret {
+  display: inline-block;
+  width: 7px;
+  height: 14px;
+  background: var(--color-spine);
+  animation: nb-blink 1.1s steps(1) infinite;
+}
+
+.nb-typed {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  animation: nb-typing 700ms steps(28, end) 200ms both;
+}
+
+.nb-cube-scene {
+  width: 26px;
+  height: 26px;
+  perspective: 220px;
+  cursor: pointer;
+}
+
+.nb-cube {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  animation: nb-cube-spin 9s linear infinite;
+}
+
+.nb-cube.nb-cube-burst {
+  animation: nb-cube-burst 700ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.nb-cube-face {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--color-accent);
+  background: var(--accent-soft);
+  box-sizing: border-box;
+}
+.nb-cube-face-front { transform: translateZ(13px); }
+.nb-cube-face-back { transform: rotateY(180deg) translateZ(13px); }
+.nb-cube-face-right { transform: rotateY(90deg) translateZ(13px); }
+.nb-cube-face-left { transform: rotateY(-90deg) translateZ(13px); }
+.nb-cube-face-top { transform: rotateX(90deg) translateZ(13px); }
+.nb-cube-face-bottom { transform: rotateX(-90deg) translateZ(13px); }
+
+.nb-terminal {
+  border: 1px solid var(--color-rule);
+  border-radius: 2px;
+  background: var(--color-bg);
+  box-shadow: 0 8px 24px -18px var(--color-spine);
+  animation: nb-rise 520ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+.nb-terminal:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px -16px var(--color-spine);
+}
+
+.nb-terminal-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid var(--color-rule);
+  background: var(--color-surface);
+}
+
+.nb-terminal-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--color-rule);
+}
+.nb-terminal-dot-accent {
+  background: var(--color-accent);
+  animation: nb-pulse 2.6s ease-in-out 900ms infinite;
+}
+
+.nb-terminal-path {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+  color: var(--color-faint);
+  margin-left: 6px;
+}
+
+.nb-terminal-body {
+  padding: 1.25rem 1.1rem;
+}
+
+.nb-task-node-blip {
+  animation-name: nb-blip;
+  animation-duration: 420ms;
+  animation-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 /* react-markdown output inside the note preview pane. */

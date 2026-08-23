@@ -26,7 +26,10 @@ Dropbox's basics combined, for personal/small-group use.
 
 Theme tokens (`client/src/index.css`) are lifted from ethandbard.com's
 `theme-dark.scss` / `theme-light.scss`: IBM Plex Mono + Newsreader, phosphor
-green accent, hairline borders.
+green accent, hairline borders. Each panel renders as a terminal window
+(dot bar + path label), with a manual dark/light toggle in the header —
+dark is phosphor-on-black, light is a warm paper tone rather than stark
+white.
 
 ## Local development
 

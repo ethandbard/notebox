@@ -78,8 +78,6 @@ export default function FilesPanel() {
 
   return (
     <div className="space-y-6">
-      <h2 className="label text-xs text-faint">Files</h2>
-
       <div
         onDragOver={(e) => {
           e.preventDefault();

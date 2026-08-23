@@ -68,7 +68,6 @@ export default function NotesPanel() {
 
   return (
     <>
-      <h2 className="label text-xs text-faint mb-4">Notes</h2>
       <div className="grid grid-cols-[14rem_1fr] gap-6">
       <aside className="space-y-4">
         <form onSubmit={addSection} className="flex gap-1">
