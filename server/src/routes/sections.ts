@@ -1,16 +1,20 @@
 import { Router } from 'express';
-import { asc, eq, sql } from 'drizzle-orm';
+import { and, asc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../db/client.js';
 import { sections } from '../db/schema.js';
-import { asyncHandler, badRequest, notFound } from '../http.js';
+import { actingUser, asyncHandler, badRequest, notFound } from '../http.js';
 
 export const sectionsRouter = Router();
 
 sectionsRouter.get(
   '/',
-  asyncHandler(async (_req, res) => {
-    const rows = await db.select().from(sections).orderBy(asc(sections.position), asc(sections.id));
+  asyncHandler(async (req, res) => {
+    const rows = await db
+      .select()
+      .from(sections)
+      .where(eq(sections.owner, actingUser(req)))
+      .orderBy(asc(sections.position), asc(sections.id));
     res.json(rows);
   }),
 );
@@ -21,12 +25,14 @@ sectionsRouter.post(
   '/',
   asyncHandler(async (req, res) => {
     const body = createSchema.parse(req.body);
+    const owner = actingUser(req);
     const [{ maxPosition }] = await db
       .select({ maxPosition: sql<number>`coalesce(max(${sections.position}), -1)` })
-      .from(sections);
+      .from(sections)
+      .where(eq(sections.owner, owner));
     const [row] = await db
       .insert(sections)
-      .values({ name: body.name, position: maxPosition + 1 })
+      .values({ name: body.name, position: maxPosition + 1, owner })
       .returning();
     res.status(201).json(row);
   }),
@@ -43,7 +49,11 @@ sectionsRouter.patch(
     const id = Number(req.params.id);
     const body = updateSchema.parse(req.body);
     if (Object.keys(body).length === 0) throw badRequest('No fields to update');
-    const [row] = await db.update(sections).set(body).where(eq(sections.id, id)).returning();
+    const [row] = await db
+      .update(sections)
+      .set(body)
+      .where(and(eq(sections.id, id), eq(sections.owner, actingUser(req))))
+      .returning();
     if (!row) throw notFound('Section not found');
     res.json(row);
   }),
@@ -53,7 +63,10 @@ sectionsRouter.delete(
   '/:id',
   asyncHandler(async (req, res) => {
     const id = Number(req.params.id);
-    const [row] = await db.delete(sections).where(eq(sections.id, id)).returning();
+    const [row] = await db
+      .delete(sections)
+      .where(and(eq(sections.id, id), eq(sections.owner, actingUser(req))))
+      .returning();
     if (!row) throw notFound('Section not found');
     res.status(204).end();
   }),

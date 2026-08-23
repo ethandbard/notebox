@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import multer from 'multer';
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, unlink } from 'node:fs';
@@ -26,8 +26,12 @@ const upload = multer({
 
 filesRouter.get(
   '/',
-  asyncHandler(async (_req, res) => {
-    const rows = await db.select().from(files).orderBy(desc(files.uploadedAt));
+  asyncHandler(async (req, res) => {
+    const rows = await db
+      .select()
+      .from(files)
+      .where(eq(files.uploadedBy, actingUser(req)))
+      .orderBy(desc(files.uploadedAt));
     res.json(rows);
   }),
 );
@@ -55,7 +59,10 @@ filesRouter.get(
   '/:id/download',
   asyncHandler(async (req, res) => {
     const id = Number(req.params.id);
-    const [row] = await db.select().from(files).where(eq(files.id, id));
+    const [row] = await db
+      .select()
+      .from(files)
+      .where(and(eq(files.id, id), eq(files.uploadedBy, actingUser(req))));
     if (!row) throw notFound('File not found');
     const path = join(uploadDir, row.storedName);
     if (!existsSync(path)) throw notFound('File missing on disk');
@@ -63,11 +70,36 @@ filesRouter.get(
   }),
 );
 
+// Same file, but rendered inline (image/PDF/text/audio/video in a browser
+// tab or an <img>/<iframe>) instead of forced download. No filename in
+// Content-Disposition here — omitting it sidesteps sanitizing a
+// user-controlled string into a header, and a "save as" name is only useful
+// for the download path anyway.
+filesRouter.get(
+  '/:id/view',
+  asyncHandler(async (req, res) => {
+    const id = Number(req.params.id);
+    const [row] = await db
+      .select()
+      .from(files)
+      .where(and(eq(files.id, id), eq(files.uploadedBy, actingUser(req))));
+    if (!row) throw notFound('File not found');
+    const path = join(uploadDir, row.storedName);
+    if (!existsSync(path)) throw notFound('File missing on disk');
+    res.setHeader('Content-Type', row.mimeType);
+    res.setHeader('Content-Disposition', 'inline');
+    res.sendFile(path);
+  }),
+);
+
 filesRouter.delete(
   '/:id',
   asyncHandler(async (req, res) => {
     const id = Number(req.params.id);
-    const [row] = await db.delete(files).where(eq(files.id, id)).returning();
+    const [row] = await db
+      .delete(files)
+      .where(and(eq(files.id, id), eq(files.uploadedBy, actingUser(req))))
+      .returning();
     if (!row) throw notFound('File not found');
     unlink(join(uploadDir, row.storedName), () => {});
     res.status(204).end();

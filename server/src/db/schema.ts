@@ -5,6 +5,7 @@ export const sections = sqliteTable('sections', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull(),
   position: integer('position').notNull().default(0),
+  owner: text('owner').notNull(),
   createdAt: text('created_at').notNull().default(sql`(current_timestamp)`),
 });
 

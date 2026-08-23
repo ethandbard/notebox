@@ -15,10 +15,39 @@ function formatDate(raw: string) {
   return new Date(iso).toLocaleString();
 }
 
+function PreviewBody({ file }: { file: FileEntry }) {
+  const viewUrl = `/api/files/${file.id}/view`;
+  if (file.mimeType.startsWith('image/')) {
+    return <img src={viewUrl} alt={file.originalName} className="max-w-full max-h-[75vh] mx-auto" />;
+  }
+  if (file.mimeType.startsWith('video/')) {
+    return <video src={viewUrl} controls className="max-w-full max-h-[75vh] mx-auto" />;
+  }
+  if (file.mimeType.startsWith('audio/')) {
+    return <audio src={viewUrl} controls className="w-full" />;
+  }
+  if (
+    file.mimeType === 'application/pdf' ||
+    file.mimeType.startsWith('text/') ||
+    file.mimeType === 'application/json'
+  ) {
+    return <iframe src={viewUrl} title={file.originalName} className="w-full h-[75vh] bg-surface" />;
+  }
+  return (
+    <div className="text-center py-16 text-muted text-sm">
+      <p className="mb-4">No preview available for this file type.</p>
+      <a href={`/api/files/${file.id}/download`} className="label text-xs text-accent hover:underline">
+        Download instead
+      </a>
+    </div>
+  );
+}
+
 export default function FilesPage() {
   const [files, setFiles] = useState<FileEntry[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [previewFile, setPreviewFile] = useState<FileEntry | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const load = () => api.get<FileEntry[]>('/api/files').then(setFiles);
@@ -43,6 +72,7 @@ export default function FilesPage() {
   async function remove(id: number) {
     if (!confirm('Delete this file?')) return;
     await api.delete(`/api/files/${id}`);
+    if (previewFile?.id === id) setPreviewFile(null);
     load();
   }
 
@@ -99,9 +129,12 @@ export default function FilesPage() {
           {files.map((f) => (
             <tr key={f.id}>
               <td className="px-3 py-2">
-                <a href={`/api/files/${f.id}/download`} className="text-accent hover:underline">
+                <button
+                  onClick={() => setPreviewFile(f)}
+                  className="text-accent hover:underline text-left"
+                >
                   {f.originalName}
-                </a>
+                </button>
               </td>
               <td className="px-3 py-2 text-muted">{formatSize(f.sizeBytes)}</td>
               <td className="px-3 py-2 text-muted">{formatDate(f.uploadedAt)}</td>
@@ -115,6 +148,31 @@ export default function FilesPage() {
           ))}
         </tbody>
       </table>
+
+      {previewFile && (
+        <div
+          onClick={() => setPreviewFile(null)}
+          className="fixed inset-0 z-10 bg-bg/80 flex items-center justify-center p-6"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-bg border border-rule max-w-4xl w-full max-h-[90vh] overflow-auto p-4"
+          >
+            <div className="flex items-center justify-between mb-3 gap-3">
+              <span className="text-sm truncate">{previewFile.originalName}</span>
+              <div className="flex items-center gap-4 label text-xs shrink-0">
+                <a href={`/api/files/${previewFile.id}/download`} className="text-faint hover:text-accent">
+                  Download
+                </a>
+                <button onClick={() => setPreviewFile(null)} className="text-faint hover:text-accent">
+                  Close ✕
+                </button>
+              </div>
+            </div>
+            <PreviewBody file={previewFile} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
