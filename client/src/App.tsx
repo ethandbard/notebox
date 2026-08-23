@@ -14,7 +14,7 @@ function randomGlyph(id: number) {
     left: Math.random() * 100,
     top: Math.random() * 100,
     char: GLYPH_CHARS[Math.floor(Math.random() * GLYPH_CHARS.length)],
-    duration: 3000 + Math.random() * 4000,
+    duration: 5000 + Math.random() * 5000,
     delay: Math.random() * 6000,
   };
 }
@@ -24,7 +24,7 @@ export default function App() {
   const [beamActive, setBeamActive] = useState(false);
   const [beamId, setBeamId] = useState(0);
   const [cubeBurst, setCubeBurst] = useState(false);
-  const [glyphs, setGlyphs] = useState(() => Array.from({ length: 14 }, (_, i) => randomGlyph(i)));
+  const [glyphs, setGlyphs] = useState(() => Array.from({ length: 8 }, (_, i) => randomGlyph(i)));
   const [openCount, setOpenCount] = useState<number | null>(null);
   const [sectionCount, setSectionCount] = useState<number | null>(null);
 
@@ -35,15 +35,6 @@ export default function App() {
   useEffect(() => {
     api.get<Task[]>('/api/tasks').then((rows) => setOpenCount(rows.length));
     api.get<Section[]>('/api/sections').then((rows) => setSectionCount(rows.length));
-  }, []);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setGlyphs((gs) =>
-        gs.map((g) => (Math.random() < 0.3 ? { ...randomGlyph(g.id), char: g.char } : g)),
-      );
-    }, 1600);
-    return () => clearInterval(timer);
   }, []);
 
   const triggerWave = () => {
