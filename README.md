@@ -3,6 +3,8 @@
 A lightweight, self-hosted notes, to-do, and file-drop app — Notion and
 Dropbox's basics combined, for personal/small-group use.
 
+**Live**: [notebox.ethandbard.com](https://notebox.ethandbard.com) (sign-in required), listed on [ethandbard.com](https://ethandbard.com).
+
 ## Features
 
 - **Tasks** — a checklist with a completed-items history you can reopen.
