@@ -96,9 +96,13 @@ body {
   0%, 49% { opacity: 1; }
   50%, 100% { opacity: 0; }
 }
+/* transform + opacity only: both are compositor-only properties, so this
+   loop never triggers a main-thread repaint the way animating box-shadow
+   would. Four of these run at once (infinitely) — an uncomposited version
+   is exactly the kind of thing that reads as flicker/tearing in Chrome. */
 @keyframes nb-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 var(--accent-soft); }
-  50% { box-shadow: 0 0 0 5px var(--accent-soft); }
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.35); opacity: 0.55; }
 }
 @keyframes nb-rise {
   from { opacity: 0; transform: translateY(10px); }
@@ -109,24 +113,33 @@ body {
   to { width: 100%; }
 }
 @keyframes nb-scan {
-  0% { top: -140px; opacity: 0; }
+  0% { transform: translateY(0); opacity: 0; }
   3% { opacity: 1; }
   24% { opacity: 1; }
   27% { opacity: 0; }
-  100% { top: 100%; opacity: 0; }
+  100% { transform: translateY(100vh); opacity: 0; }
 }
 @keyframes nb-glyph {
   0%, 100% { opacity: 0; }
   50% { opacity: 1; }
 }
 @keyframes nb-cube-spin {
-  from { transform: rotateX(0deg) rotateY(0deg); }
-  to { transform: rotateX(360deg) rotateY(360deg); }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes nb-cube-spin-rev {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
 }
 @keyframes nb-cube-burst {
-  0% { transform: rotateX(0deg) rotateY(0deg) scale(1); }
-  40% { transform: rotateX(160deg) rotateY(220deg) scale(1.2); }
-  100% { transform: rotateX(360deg) rotateY(540deg) scale(1); }
+  0% { transform: rotate(0deg) scale(1); }
+  40% { transform: rotate(300deg) scale(1.35); }
+  100% { transform: rotate(720deg) scale(1); }
+}
+@keyframes nb-cube-burst-rev {
+  0% { transform: rotate(0deg) scale(1); }
+  40% { transform: rotate(-300deg) scale(1.35); }
+  100% { transform: rotate(-720deg) scale(1); }
 }
 @keyframes nb-blip {
   0% { transform: scale(1); }
@@ -139,6 +152,17 @@ body {
     animation: none !important;
     transition-duration: 1ms !important;
   }
+}
+
+/* A backgrounded/occluded tab can lose its CSS animation timelines and
+   replay every one of them from frame zero on refocus — dozens of elements
+   snapping back in sync reads as the whole page flashing. Explicitly
+   pausing on visibilitychange (see App.tsx) keeps each animation's elapsed
+   time intact instead of losing it. */
+:root.nb-anim-paused *,
+:root.nb-anim-paused *::before,
+:root.nb-anim-paused *::after {
+  animation-play-state: paused !important;
 }
 
 .nb-grid-bg {
@@ -220,36 +244,39 @@ body {
 .nb-cube-scene {
   width: 26px;
   height: 26px;
-  perspective: 220px;
+  position: relative;
   cursor: pointer;
 }
 
+/* Two nested squares counter-rotating in flat 2D — no perspective, no
+   preserve-3d, no overlapping faces. A real CSS 3D cube kept flickering
+   here (translucent rotating faces have no well-defined draw order, so the
+   GPU's blend order can flip frame to frame); a single flat rotating layer
+   has nothing to sort, so it can't reproduce that. */
 .nb-cube {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  transform-style: preserve-3d;
-  animation: nb-cube-spin 9s linear infinite;
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--color-accent);
+  background: var(--accent-soft);
+  box-sizing: border-box;
+  animation: nb-cube-spin 7s linear infinite;
+}
+
+.nb-cube-inner {
+  position: absolute;
+  inset: 6px;
+  border: 1px solid var(--color-accent);
+  box-sizing: border-box;
+  animation: nb-cube-spin-rev 5s linear infinite;
 }
 
 .nb-cube.nb-cube-burst {
   animation: nb-cube-burst 700ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
-.nb-cube-face {
-  position: absolute;
-  width: 26px;
-  height: 26px;
-  border: 1px solid var(--color-accent);
-  background: var(--accent-soft);
-  box-sizing: border-box;
+.nb-cube-inner.nb-cube-burst {
+  animation: nb-cube-burst-rev 700ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
-.nb-cube-face-front { transform: translateZ(13px); }
-.nb-cube-face-back { transform: rotateY(180deg) translateZ(13px); }
-.nb-cube-face-right { transform: rotateY(90deg) translateZ(13px); }
-.nb-cube-face-left { transform: rotateY(-90deg) translateZ(13px); }
-.nb-cube-face-top { transform: rotateX(90deg) translateZ(13px); }
-.nb-cube-face-bottom { transform: rotateX(-90deg) translateZ(13px); }
 
 .nb-terminal {
   border: 1px solid var(--color-rule);

@@ -33,6 +33,14 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
+    const root = document.documentElement;
+    const onVisibility = () => root.classList.toggle('nb-anim-paused', document.hidden);
+    onVisibility();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, []);
+
+  useEffect(() => {
     api.get<Task[]>('/api/tasks').then((rows) => setOpenCount(rows.length));
     api.get<Section[]>('/api/sections').then((rows) => setSectionCount(rows.length));
   }, []);
@@ -146,14 +154,8 @@ export default function App() {
                 if (e.key === 'Enter' || e.key === ' ') burstCube();
               }}
             >
-              <div className={`nb-cube ${cubeBurst ? 'nb-cube-burst' : ''}`}>
-                <span className="nb-cube-face nb-cube-face-front" />
-                <span className="nb-cube-face nb-cube-face-back" />
-                <span className="nb-cube-face nb-cube-face-right" />
-                <span className="nb-cube-face nb-cube-face-left" />
-                <span className="nb-cube-face nb-cube-face-top" />
-                <span className="nb-cube-face nb-cube-face-bottom" />
-              </div>
+              <div className={`nb-cube ${cubeBurst ? 'nb-cube-burst' : ''}`} />
+              <div className={`nb-cube-inner ${cubeBurst ? 'nb-cube-burst' : ''}`} />
             </div>
           </div>
         </header>

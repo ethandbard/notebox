@@ -16,6 +16,7 @@ export default function TasksPanel() {
   const [showHistory, setShowHistory] = useState(false);
   const [text, setText] = useState('');
   const [justToggled, setJustToggled] = useState<number | null>(null);
+  const [risen, setRisen] = useState<Set<number>>(new Set());
 
   const loadActive = () => api.get<Task[]>('/api/tasks').then(setTasks);
   const loadHistory = () => api.get<Task[]>('/api/tasks?done=true').then(setHistory);
@@ -70,7 +71,12 @@ export default function TasksPanel() {
             <li
               key={t.id}
               className="flex items-center gap-3 px-3 py-2"
-              style={{ animation: `nb-rise 400ms cubic-bezier(0.22,0.61,0.36,1) ${i * 60}ms both` }}
+              style={
+                risen.has(t.id)
+                  ? { animation: 'none' }
+                  : { animation: `nb-rise 400ms cubic-bezier(0.22,0.61,0.36,1) ${i * 60}ms both` }
+              }
+              onAnimationEnd={() => setRisen((s) => new Set(s).add(t.id))}
             >
               <button
                 aria-label="Toggle task"
