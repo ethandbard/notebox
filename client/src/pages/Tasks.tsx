@@ -1,0 +1,105 @@
+import { useEffect, useState } from 'react';
+import { api } from '../lib/api.ts';
+import type { Task } from '../lib/types.ts';
+
+// SQLite's `current_timestamp` default yields "2026-08-23 15:45:24" (space,
+// no zone); `completedAt` is set from `Date.toISOString()`, already full ISO
+// with a trailing Z. Only reshape the former, or a second Z makes an invalid date.
+function formatDate(raw: string) {
+  const iso = raw.includes('T') ? raw : `${raw.replace(' ', 'T')}Z`;
+  return new Date(iso).toLocaleString();
+}
+
+export default function TasksPage() {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [history, setHistory] = useState<Task[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [text, setText] = useState('');
+
+  const loadActive = () => api.get<Task[]>('/api/tasks').then(setTasks);
+  const loadHistory = () => api.get<Task[]>('/api/tasks?done=true').then(setHistory);
+
+  useEffect(() => {
+    loadActive();
+  }, []);
+
+  useEffect(() => {
+    if (showHistory) loadHistory();
+  }, [showHistory]);
+
+  async function addTask(e: React.FormEvent) {
+    e.preventDefault();
+    const value = text.trim();
+    if (!value) return;
+    setText('');
+    await api.post('/api/tasks', { text: value });
+    loadActive();
+  }
+
+  async function toggle(id: number) {
+    await api.patch(`/api/tasks/${id}/toggle`);
+    loadActive();
+    if (showHistory) loadHistory();
+  }
+
+  async function remove(id: number) {
+    await api.delete(`/api/tasks/${id}`);
+    loadActive();
+  }
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="label text-xs text-faint mb-4">To-dos</h1>
+        <form onSubmit={addTask} className="flex gap-2 mb-4">
+          <input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Add a task…"
+            className="flex-1 bg-surface border border-rule px-3 py-2 text-sm outline-none focus:border-accent"
+          />
+          <button className="label text-xs px-4 border border-rule hover:border-accent hover:text-accent">
+            Add
+          </button>
+        </form>
+        <ul className="divide-y divide-rule border border-rule">
+          {tasks.length === 0 && <li className="px-3 py-4 text-sm text-faint">Nothing pending.</li>}
+          {tasks.map((t) => (
+            <li key={t.id} className="flex items-center gap-3 px-3 py-2">
+              <input type="checkbox" checked={false} onChange={() => toggle(t.id)} className="accent-accent" />
+              <span className="flex-1 text-sm">{t.text}</span>
+              <button onClick={() => remove(t.id)} className="text-faint hover:text-accent text-xs">
+                ✕
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div>
+        <button
+          onClick={() => setShowHistory((v) => !v)}
+          className="label text-xs text-faint hover:text-accent"
+        >
+          {showHistory ? '− Hide history' : '+ Show history'}
+        </button>
+        {showHistory && (
+          <ul className="mt-3 divide-y divide-rule border border-rule">
+            {history.length === 0 && <li className="px-3 py-4 text-sm text-faint">No completed tasks yet.</li>}
+            {history.map((t) => (
+              <li key={t.id} className="flex items-center gap-3 px-3 py-2">
+                <span className="flex-1 text-sm text-muted line-through">{t.text}</span>
+                <span className="label text-[0.65rem] text-faint">
+                  {t.completedAt ? formatDate(t.completedAt) : ''}
+                </span>
+                <button onClick={() => toggle(t.id)} className="label text-xs text-faint hover:text-accent">
+                  Reopen
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}

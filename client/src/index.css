@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+/* Palette and type stack lifted from ethandbard.com's theme-dark.scss /
+   theme-light.scss, minus its animated hero/spine layout — this is an app
+   shell, not a landing page.
+
+   `@theme` is a Tailwind build-time directive: it registers tokens for
+   utility generation and does not respect being nested inside `@media` (both
+   branches would just land in `:root`, with the second one always winning).
+   So the actual color values live as plain runtime CSS variables below,
+   swapped by the media query as ordinary CSS; `@theme` only maps Tailwind's
+   `--color-*` tokens onto those variables via `var()`, once, unconditionally. */
+:root {
+  --bg: #070a09;
+  --surface: #0b0f0e;
+  --ink: #dde6e1;
+  --muted: #8fa39b;
+  --faint: #5e736b;
+  --accent: #5ce39b;
+  --rule: #1e2b27;
+  --spine: #2f4b41;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #eef2ed;
+    --surface: #e4e9e2;
+    --ink: #101915;
+    --muted: #445048;
+    --faint: #6b7a70;
+    --accent: #1e7a4c;
+    --rule: #cbd5cc;
+    --spine: #9aa89d;
+  }
+}
+
+@theme {
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-serif: "Newsreader", Georgia, "Times New Roman", serif;
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-rule: var(--rule);
+  --color-spine: var(--spine);
+
+  --radius-DEFAULT: 2px;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-serif);
+}
+
+.label {
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* react-markdown output inside the note preview pane. */
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3 {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--color-ink);
+  margin: 1.2em 0 0.5em;
+}
+
+.markdown-body p {
+  margin: 0.75em 0;
+  line-height: 1.6;
+}
+
+.markdown-body a {
+  color: var(--color-accent);
+}
+
+.markdown-body code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--color-surface);
+  border: 1px solid var(--color-rule);
+  padding: 0.05em 0.4em;
+  border-radius: 2px;
+}
+
+.markdown-body pre {
+  background: var(--color-surface);
+  border: 1px solid var(--color-rule);
+  padding: 0.75em 1em;
+  overflow-x: auto;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 1.4em;
+  margin: 0.5em 0;
+}
+
+.markdown-body blockquote {
+  border-left: 2px solid var(--color-spine);
+  padding-left: 1em;
+  color: var(--color-muted);
+}

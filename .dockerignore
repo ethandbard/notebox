@@ -1,0 +1,18 @@
+# Secrets -- never in an image layer
+config.env
+.env
+
+# State the VPS owns
+data/
+
+# Version control and local tooling
+.git/
+.github/
+.claude/
+.vscode/
+.idea/
+
+# Language artifacts
+node_modules/
+dist/
+*.log
