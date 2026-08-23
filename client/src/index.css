@@ -117,7 +117,7 @@ body {
 }
 @keyframes nb-glyph {
   0%, 100% { opacity: 0; }
-  50% { opacity: 0.4; }
+  50% { opacity: 1; }
 }
 @keyframes nb-cube-spin {
   from { transform: rotateX(0deg) rotateY(0deg); }
